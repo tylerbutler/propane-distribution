@@ -50,7 +50,10 @@ def update_version_py(git_tag_prefix='v', version_path=None):
     if version_path is None:
         version_path = os.path.join(os.getcwd(), VERSION_FILENAME)
     else:
-        version_path = os.path.join(version_path)
+        if os.path.isdir(version_path):
+            version_path = os.path.join(version_path, VERSION_FILENAME)
+        else:
+            version_path = os.path.join(version_path)
 
     if not os.path.isdir(".git"):
         print "This does not appear to be a Git repository."
@@ -107,6 +110,8 @@ def get_version_path(distcmd):
             if os.path.exists(test_path):
                 version_path = test_path
                 break
+            elif os.path.exists(os.path.dirname(test_path)):
+                version_path = os.path.join(os.path.dirname(test_path), VERSION_FILENAME)
             else:
                 version_path = os.path.join(os.getcwd(), distcmd.distribution.package_data.keys()[0], VERSION_FILENAME)
     return version_path
@@ -135,18 +140,11 @@ class Version(Command):
 
 
 class sdist(_sdist):
-    def initialize_options(self):
-        _sdist.initialize_options(self)
-
-    def finalize_options(self):
-        _sdist.finalize_options(self)
-        self.version_path = get_version_path(self)
-
     def run(self):
-        update_version_py(version_path=self.version_path)
-        # unless we update this, the sdist command will keep using the old
-        # version
-        self.distribution.metadata.version = get_version(self.version_path)
+        update_version_py(version_path=get_version_path(self))
+        # unless we update this, the sdist command will keep
+        # using the old version
+        self.distribution.metadata.version = get_version(get_version_path(self))
         return _sdist.run(self)
 
 cmdclassdict = {
