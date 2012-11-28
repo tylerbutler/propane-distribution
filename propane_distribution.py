@@ -1,6 +1,6 @@
 # coding=utf-8
-import os, re, subprocess
-from datetime import date
+import os, re, subprocess, time
+from datetime import datetime, date as sysdate
 from distutils.command.sdist import sdist as _sdist
 from distutils.core import Command
 
@@ -8,15 +8,40 @@ __author__ = 'Tyler Butler <tyler@tylerbutler.com>'
 
 # Inspired by https://github.com/warner/python-ecdsa/blob/0ed702a9d4057ecf33eea969b8cf280eaccd89a1/setup.py#L34
 
+class version_class(object):
+    def __init__(self, version_string='0.0.1', date=None, time=None):
+        self.version = version_string
+        if time is None:
+            time = datetime.utcnow()
+        if date is None:
+            date = time.date
+        self.time = time
+        self.date = date
+
+    @property
+    def string(self):
+        return self.version
+
+    def __unicode__(self):
+        return self.version
+
+    __str__ = __unicode__
+    __repr__ = __unicode__
+
 VERSION_FILENAME = '_version.py'
 VERSION_PY = """# coding=utf-8
+import time
 from datetime import date
+from propane_distribution import version_class
 
 # This file is originally generated from Git information by running 'setup.py
 # version'. Distribution tarballs contain a pre-generated copy of this file.
 
 __version__ = '{version}'
 __date__ = date({year}, {month}, {day})
+__time__ = time.gmtime({time})
+
+version = version_class(__version__, __date__, __time__)
 """
 
 GIT_RUN_FAIL_MSG = "unable to run git, leaving %s alone"
@@ -32,7 +57,7 @@ def update_version_py(git_tag_prefix='v', version_path=None):
         return
     try:
         p = subprocess.Popen(["git", "describe", "--tags", "--dirty", "--always"],
-            stdout=subprocess.PIPE)
+                             stdout=subprocess.PIPE)
     except EnvironmentError:
         print GIT_RUN_FAIL_MSG % version_path
         return
@@ -45,8 +70,13 @@ def update_version_py(git_tag_prefix='v', version_path=None):
     else:
         ver = stdout.strip()
     with open(version_path, 'wb') as f:
-        today = date.today()
-        f.write(VERSION_PY.format(version=ver, year=today.year, month=today.month, day=today.day))
+        today = sysdate.today()
+        #time = calendar.timegm()
+        f.write(VERSION_PY.format(version=ver,
+                                  year=today.year,
+                                  month=today.month,
+                                  day=today.day,
+                                  time=time.time()))
     print "set %s to '%s'" % (version_path, ver)
 
 
