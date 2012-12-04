@@ -104,7 +104,7 @@ def get_version(version_path=None):
 def get_version_path(distcmd):
     if len(distcmd.distribution.package_data) == 1:
         version_path = os.path.join(os.getcwd(), distcmd.distribution.package_data.keys()[0], VERSION_FILENAME)
-    else:
+    elif len(distcmd.distribution.package_data) > 1:
         for tmp_path in distcmd.distribution.package_data.keys():
             test_path = os.path.join(os.getcwd(), tmp_path, VERSION_FILENAME)
             if os.path.exists(test_path):
@@ -114,6 +114,13 @@ def get_version_path(distcmd):
                 version_path = os.path.join(os.path.dirname(test_path), VERSION_FILENAME)
             else:
                 version_path = os.path.join(os.getcwd(), distcmd.distribution.package_data.keys()[0], VERSION_FILENAME)
+    else:
+        packages = [pkg for pkg in distcmd.distribution.packages if not '.' in pkg]
+        if len(packages) == 1:
+            version_path = os.path.join(os.getcwd(), packages[0], VERSION_FILENAME)
+        else:
+            raise Exception, "Couldn't find appropriate version_path."
+
     return version_path
 
 
@@ -160,7 +167,7 @@ def get_install_requirements():
         temp = [i[:-1] for i in temp]
 
         for line in temp:
-            if line is None or line == '' or line.startswith(('#', '-e')):
+            if line is None or line == '' or line.startswith(('#', '-e', 'git+', 'hg+')):
                 continue
             else:
                 requirements.append(line)
