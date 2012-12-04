@@ -55,9 +55,9 @@ def update_version_py(git_tag_prefix='v', version_path=None):
         else:
             version_path = os.path.join(version_path)
 
-    if not os.path.isdir(".git"):
-        print "This does not appear to be a Git repository."
-        return
+        #    if not os.path.isdir(".git"):
+        #        print "This does not appear to be a Git repository."
+        #        return
     try:
         p = subprocess.Popen(["git", "describe", "--tags", "--dirty", "--always"],
                              stdout=subprocess.PIPE)
