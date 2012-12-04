@@ -55,9 +55,14 @@ def update_version_py(git_tag_prefix='v', version_path=None):
         else:
             version_path = os.path.join(version_path)
 
-        #    if not os.path.isdir(".git"):
-        #        print "This does not appear to be a Git repository."
-        #        return
+    # Check if the project has a version template
+    template_path = os.path.join(os.path.dirname(version_path), '_version.py.template')
+    if os.path.exists(template_path):
+        with open(template_path, mode='rb') as template_file:
+            version_py_template = template_file.read()
+    else:
+        version_py_template = VERSION_PY
+
     try:
         p = subprocess.Popen(["git", "describe", "--tags", "--dirty", "--always"],
                              stdout=subprocess.PIPE)
@@ -74,12 +79,11 @@ def update_version_py(git_tag_prefix='v', version_path=None):
         ver = stdout.strip()
     with open(version_path, 'wb') as f:
         today = sysdate.today()
-        #time = calendar.timegm()
-        f.write(VERSION_PY.format(version=ver,
-                                  year=today.year,
-                                  month=today.month,
-                                  day=today.day,
-                                  time=time.time()))
+        f.write(version_py_template.format(version=ver,
+                                           year=today.year,
+                                           month=today.month,
+                                           day=today.day,
+                                           time=time.time()))
     print "set %s to '%s'" % (version_path, ver)
 
 
