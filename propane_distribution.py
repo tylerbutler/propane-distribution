@@ -41,7 +41,7 @@ class version_class(object):
 
     @property
     def minor_string(self):
-        return '.'.join(self.tuple[0:1])
+        return '.'.join(self.tuple[0:2])
 
     @property
     def patch_string(self):
