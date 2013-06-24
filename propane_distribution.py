@@ -1,16 +1,25 @@
 # coding=utf-8
-import os, re, subprocess, time
+from collections import namedtuple
+import os
+import re
+import subprocess
+import time
 from datetime import datetime, date as sysdate
 from distutils.command.sdist import sdist as _sdist
 from distutils.core import Command
+
 
 __author__ = 'Tyler Butler <tyler@tylerbutler.com>'
 
 # Inspired by https://github.com/warner/python-ecdsa/blob/0ed702a9d4057ecf33eea969b8cf280eaccd89a1/setup.py#L34
 
+VersionTuple = namedtuple('VersionTuple', ['major', 'minor', 'patch'])
+
+
 class version_class(object):
     def __init__(self, version_string='0.0.1', date=None, time=None):
         self.version = version_string
+        self._version_tuple = self._parse_tuple(self.version)
         if time is None:
             time = datetime.utcnow()
         if date is None:
@@ -22,11 +31,32 @@ class version_class(object):
     def string(self):
         return self.version
 
+    @property
+    def tuple(self):
+        return self._version_tuple
+
+    @property
+    def major_string(self):
+        return self.tuple.major
+
+    @property
+    def minor_string(self):
+        return '.'.join(self.tuple[0:1])
+
+    @property
+    def patch_string(self):
+        return self.string
+
+    def _parse_tuple(self, ver_string):
+        split_string = ver_string.split('.')
+        return VersionTuple(split_string[0], split_string[1], '.'.join(split_string[2:]))
+
     def __unicode__(self):
-        return self.version
+        return self.string
 
     __str__ = __unicode__
     __repr__ = __unicode__
+
 
 VERSION_FILENAME = '_version.py'
 VERSION_PY = """# coding=utf-8
@@ -35,7 +65,7 @@ from datetime import date
 from propane_distribution import version_class
 
 # This file is originally generated from Git information by running 'setup.py
-# version'. Distribution tarballs contain a pre-generated copy of this file.
+# version'. Distributions contain a pre-generated copy of this file.
 
 __version__ = '{version}'
 __date__ = date({year}, {month}, {day})
@@ -46,6 +76,7 @@ version = version_class(__version__, __date__, __time__)
 
 GIT_RUN_FAIL_MSG = "unable to run git, leaving %s alone"
 
+
 def update_version_py(git_tag_prefix='v', version_path=None):
     if version_path is None:
         version_path = os.path.join(os.getcwd(), VERSION_FILENAME)
@@ -55,9 +86,10 @@ def update_version_py(git_tag_prefix='v', version_path=None):
         else:
             version_path = os.path.join(version_path)
 
-        #    if not os.path.isdir(".git"):
-        #        print "This does not appear to be a Git repository."
-        #        return
+    #    if not os.path.isdir(".git"):
+    #        print "This does not appear to be a Git repository."
+    #        return
+
     try:
         p = subprocess.Popen(["git", "describe", "--tags", "--dirty", "--always"],
                              stdout=subprocess.PIPE)
@@ -119,7 +151,7 @@ def get_version_path(distcmd):
         if len(packages) == 1:
             version_path = os.path.join(os.getcwd(), packages[0], VERSION_FILENAME)
         else:
-            raise Exception, "Couldn't find appropriate version_path."
+            raise Exception("Couldn't find appropriate version_path.")
 
     return version_path
 
@@ -153,6 +185,7 @@ class sdist(_sdist):
         # using the old version
         self.distribution.metadata.version = get_version(get_version_path(self))
         return _sdist.run(self)
+
 
 cmdclassdict = {
     'version': Version,
