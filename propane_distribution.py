@@ -136,6 +136,7 @@ def get_version(version_path=None):
     return None
 
 
+# noinspection PyUnboundLocalVariable
 def get_version_path(distcmd):
     if len(distcmd.distribution.package_data) == 1:
         version_path = os.path.join(os.getcwd(), distcmd.distribution.package_data.keys()[0], VERSION_FILENAME)
