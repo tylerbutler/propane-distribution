@@ -47,6 +47,24 @@ class version_class(object):
     def patch_string(self):
         return self.string
 
+    def __lt__(self, other):
+        return self.string.__lt__(other.string)
+
+    def __le__(self, other):
+        return self.string.__le__(other.string)
+
+    def __eq__(self, other):
+        return self.string.__eq__(other.string)
+
+    def __ne__(self, other):
+        return self.string.__ne__(other.string)
+
+    def __gt__(self, other):
+        return self.string.__gt__(other.string)
+
+    def __ge__(self, other):
+        return self.string.__ge__(other.string)
+
     def _parse_tuple(self, ver_string):
         split_string = ver_string.split('.')
         return VersionTuple(split_string[0], split_string[1], '.'.join(split_string[2:]))
