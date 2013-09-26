@@ -17,15 +17,15 @@ VersionTuple = namedtuple('VersionTuple', ['major', 'minor', 'patch'])
 
 
 class version_class(object):
-    def __init__(self, version_string='0.0.1', date=None, time=None):
+    def __init__(self, version_string='0.0.1', the_date=None, the_time=None):
         self.version = version_string
         self._version_tuple = self._parse_tuple(self.version)
-        if time is None:
-            time = datetime.utcnow()
-        if date is None:
-            date = time.date
-        self.time = time
-        self.date = date
+        if the_time is None:
+            the_time = datetime.utcnow()
+        if the_date is None:
+            the_date = the_time.date
+        self.time = the_time
+        self.date = the_date
 
     @property
     def string(self):
@@ -65,7 +65,8 @@ class version_class(object):
     def __ge__(self, other):
         return self.string.__ge__(other.string)
 
-    def _parse_tuple(self, ver_string):
+    @staticmethod
+    def _parse_tuple(ver_string):
         split_string = ver_string.split('.')
         return VersionTuple(split_string[0], split_string[1], '.'.join(split_string[2:]))
 
