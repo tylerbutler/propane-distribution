@@ -1,25 +1,26 @@
 # coding=utf-8
-from collections import namedtuple
 import os
 import re
 import subprocess
-import time
-from datetime import datetime, date as sysdate
 from distutils.command.sdist import sdist as _sdist
 from distutils.core import Command
+
+import time
+from datetime import datetime, date as sysdate
+import semantic_version
 
 
 __author__ = 'Tyler Butler <tyler@tylerbutler.com>'
 
 # Inspired by https://github.com/warner/python-ecdsa/blob/0ed702a9d4057ecf33eea969b8cf280eaccd89a1/setup.py#L34
 
-VersionTuple = namedtuple('VersionTuple', ['major', 'minor', 'patch'])
+git_describe_regex = re.compile(
+    r'v?(?P<major>\d*)\.(?P<minor>\d*)\.(?P<patch>\d*)(-(?P<commit>\d*-[a-z0-9]*))?(-(?P<dirty>\w*))?')
 
 
 class version_class(object):
     def __init__(self, version_string='0.0.1', the_date=None, the_time=None):
-        self.version = version_string
-        self._version_tuple = self._parse_tuple(self.version)
+        self.version = semantic_version.Version(version_string)
         if the_time is None:
             the_time = datetime.utcnow()
         if the_date is None:
@@ -29,46 +30,37 @@ class version_class(object):
 
     @property
     def string(self):
-        return self.version
-
-    @property
-    def tuple(self):
-        return self._version_tuple
+        return unicode(self.version)
 
     @property
     def major_string(self):
-        return self.tuple.major
+        return unicode(self.version.major)
 
     @property
     def minor_string(self):
-        return '.'.join(self.tuple[0:2])
+        return '.'.join(map(unicode, (self.version.major, self.version.minor)))
 
     @property
     def patch_string(self):
-        return self.string
+        return '.'.join(map(unicode, (self.version.major, self.version.minor, self.version.patch)))
 
     def __lt__(self, other):
-        return self.string.__lt__(other.string)
+        return self.version.__lt__(other.version)
 
     def __le__(self, other):
-        return self.string.__le__(other.string)
+        return self.version.__le__(other.version)
 
     def __eq__(self, other):
-        return self.string.__eq__(other.string)
+        return self.version.__eq__(other.version)
 
     def __ne__(self, other):
-        return self.string.__ne__(other.string)
+        return self.version.__ne__(other.version)
 
     def __gt__(self, other):
-        return self.string.__gt__(other.string)
+        return self.version.__gt__(other.version)
 
     def __ge__(self, other):
-        return self.string.__ge__(other.string)
-
-    @staticmethod
-    def _parse_tuple(ver_string):
-        split_string = ver_string.split('.')
-        return VersionTuple(split_string[0], split_string[1], '.'.join(split_string[2:]))
+        return self.version.__ge__(other.version)
 
     def __unicode__(self):
         return self.string
@@ -129,6 +121,11 @@ def update_version_py(git_tag_prefix='v', version_path=None):
         ver = stdout.strip()
     with open(version_path, 'wb') as f:
         today = sysdate.today()
+        # version = git_describe_regex.search(ver)
+        # if version.groupdict()['commit'] is not None:
+        #     version_str = '%s+build.%s-%s-%s' % (ver, today.year, today.month, today.day)
+        # else:
+        #     version_str = ver
         f.write(version_py_template.format(version=ver,
                                            year=today.year,
                                            month=today.month,
